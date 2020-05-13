@@ -195,14 +195,14 @@ if args.fan:
     for i in range(1, 9):
         fan_info = mlxreg_ext_fans(lid, i)
         rpm = fan_info['rpm']
-        if rpm < 6000:
+        if rpm < 4500:
             criticals.append('Fan #{} is too slow, {} RPM'.format(i, rpm))
         elif rpm > 10000:
             criticals.append('Fan #{} is too fast, {} RPM'.format(i, rpm))
         perfdata.append('Fan{fan}_RPM={speed};;{MIN_FAN}:{MAX_FAN};;'.format(
             fan=i,
             speed=rpm,
-            MIN_FAN=6000,
+            MIN_FAN=4500,
             MAX_FAN=10000,
         ))
 

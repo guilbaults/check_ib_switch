@@ -1,6 +1,6 @@
 Name:           check_ib_switch
-Version:        0.0.1
-%global gittag 0.0.1
+Version:        0.0.2
+%global gittag 0.0.2
 Release:        1%{?dist}
 Summary:        Nagios script to check the status and fault in unmanaged Mellanox Infiniband switches
 
@@ -35,6 +35,8 @@ rm -rf $RPM_BUILD_ROOT
 /usr/lib64/nagios/plugins/%{name}
 
 %changelog
+* Wed May 13 2020 Simon Guilbault <simon.guilbault@calculquebec.ca> 0.0.2-1
+- Updating fan speed threshold
 * Thu May 7 2020 Simon Guilbault <simon.guilbault@calculquebec.ca> 0.0.1-1
 - Initial release
 
