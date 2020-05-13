@@ -180,10 +180,10 @@ if args.psu:
     for i in range(2):
         psu_watt = 'watt_{}'.format(i)
         if psus[psu_watt] < 30:
-            criticals.append('PSU{0} is down with {}W'.format(
+            criticals.append('PSU{} is down with {}W'.format(
                 i, psus[psu_watt]))
         if psus[psu_watt] > 100:
-            warnings.append('PSU{0} might be alone with {}W'.format(
+            warnings.append('PSU{} might be alone with {}W'.format(
                 i, psus[psu_watt]))
         perfdata.append('PSU{psu}_W={watt};;30:100;;'.format(
             psu=i,
