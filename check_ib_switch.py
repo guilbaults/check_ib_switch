@@ -197,13 +197,13 @@ if args.fan:
         rpm = fan_info['rpm']
         if rpm < 4500:
             criticals.append('Fan #{} is too slow, {} RPM'.format(i, rpm))
-        elif rpm > 10000:
+        elif rpm > 13000:
             criticals.append('Fan #{} is too fast, {} RPM'.format(i, rpm))
         perfdata.append('Fan{fan}_RPM={speed};;{MIN_FAN}:{MAX_FAN};;'.format(
             fan=i,
             speed=rpm,
             MIN_FAN=4500,
-            MAX_FAN=10000,
+            MAX_FAN=13000,
         ))
 
 if args.temp:
