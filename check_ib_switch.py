@@ -40,10 +40,13 @@ def mlxreg_ext_fans(lid, fan_id):
     return parse_table_hex(stdout.decode("utf-8").splitlines()[4:-1])
 
 
-def mlxreg_ext_temp(lid, sensor_id):
+def mlxreg_ext_temp(lid, sensor_id, slot_index=None):
+    if slot_index is not None:
+        s = 'sensor_index={},slot_index={}'.format(sensor_id, slot_index)
+    else:
+        s = 'sensor_index={}'.format(sensor_id)
     cmdargs = ['mlxreg_ext', '-d', 'lid-{0}'.format(lid), '--reg_name',
-               'MTMP', '--get', '--indexes',
-               'sensor_index={}'.format(sensor_id)]
+               'MTMP', '--get', '--indexes', s]
     stdout, stderr = subprocess.Popen(cmdargs,
                                       stdout=subprocess.PIPE,
                                       stderr=subprocess.PIPE).communicate()
@@ -176,48 +179,72 @@ info.append('{} PN={} Rev={} SN={}'.format(sw['product_name'],
             sw['part_number'], sw['revision'], sw['serial_number']))
 
 if args.psu:
-    psus = mlxreg_ext_psu(lid)
-    for i in range(2):
-        psu_watt = 'watt_{}'.format(i)
-        if psus[psu_watt] < 30:
-            criticals.append('PSU{} is down with {}W'.format(
-                i, psus[psu_watt]))
-        if psus[psu_watt] > 100:
-            warnings.append('PSU{} might be alone with {}W'.format(
-                i, psus[psu_watt]))
-        perfdata.append('PSU{psu}_W={watt};;30:100;;'.format(
-            psu=i,
-            watt=psus[psu_watt],
-        ))
-
+    if sw['product_name'] == 'Jaguar UnmngIB200':
+        normal_max_watt = 200 # HDR
+    else:
+        normal_max_watt = 100 # EDR
+    try:
+        psus = mlxreg_ext_psu(lid)
+        for i in range(2):
+            psu_watt = 'watt_{}'.format(i)
+            if psus[psu_watt] < 30:
+                criticals.append('PSU{} is down with {}W'.format(
+                    i, psus[psu_watt]))
+            if psus[psu_watt] > normal_max_watt:
+                warnings.append('PSU{} might be alone with {}W'.format(
+                    i, psus[psu_watt]))
+            perfdata.append('PSU{psu}_W={watt};;30:{normal_max_watt};;'.format(
+                psu=i,
+                watt=psus[psu_watt],
+                normal_max_watt=normal_max_watt,
+            ))
+    except KeyError:
+        # Error while reading the PDUs
+        criticals.append('Unable to read the PSU')
 
 if args.fan:
     for i in range(1, 9):
-        fan_info = mlxreg_ext_fans(lid, i)
-        rpm = fan_info['rpm']
-        if rpm < 4500:
-            criticals.append('Fan #{} is too slow, {} RPM'.format(i, rpm))
-        elif rpm > 13000:
-            criticals.append('Fan #{} is too fast, {} RPM'.format(i, rpm))
-        perfdata.append('Fan{fan}_RPM={speed};;{MIN_FAN}:{MAX_FAN};;'.format(
-            fan=i,
-            speed=rpm,
-            MIN_FAN=4500,
-            MAX_FAN=13000,
-        ))
+        try:
+            fan_info = mlxreg_ext_fans(lid, i)
+            rpm = fan_info['rpm']
+            if rpm < 4500:
+                criticals.append('Fan #{} is too slow, {} RPM'.format(i, rpm))
+            elif rpm > 13000:
+                criticals.append('Fan #{} is too fast, {} RPM'.format(i, rpm))
+            perfdata.append('Fan{fan}_RPM={speed};;{MIN_FAN}:{MAX_FAN};;'.format(
+                fan=i,
+                speed=rpm,
+                MIN_FAN=4500,
+                MAX_FAN=13000,
+            ))
+        except KeyError:
+            criticals.append('Could not read fan #{}'.format(i))
 
 if args.temp:
-    for i in range(1, 7):
-        temp_info = mlxreg_ext_temp(lid, i)
-        temperature = temp_info['temperature']/10
-        if temperature > 45:
-            criticals.append('Temperature of #{} is too high, {}C'.format(
-                i, temperature))
-        perfdata.append('Temperature{sensor}_C={temp};;5:{MAX_TEMP};;'.format(
-            sensor=i,
-            temp=temperature,
-            MAX_TEMP=45,
-        ))
+    if sw['product_name'] == 'Jaguar UnmngIB200':
+        sensor_range = range(0,2)
+        slot_index = 0
+        max_temp = 50
+    else:
+        sensor_range = range(1,7)
+        slot_index = None
+        max_temp = 45
+
+    for i in sensor_range:
+        try:
+            temp_info = mlxreg_ext_temp(lid, i, slot_index)
+            temperature = temp_info['temperature']/10
+            if temperature > max_temp:
+                criticals.append('Temperature of #{} is too high, {}C'.format(
+                    i, temperature))
+            perfdata.append('Temperature{sensor}_C={temp};;5:{MAX_TEMP};;'.format(
+                sensor=i,
+                temp=temperature,
+                MAX_TEMP=max_temp,
+            ))
+        except KeyError:
+            criticals.append('Could not read temp #{}'.format(i))
+
 if args.cable:
     for i in range(1, 37):
         cable = mlxreg_ext_ports(lid, i)
@@ -235,14 +262,14 @@ if args.cable:
             cable['cable_length'])
         )
 
-if len(criticals) > 1:
+if len(criticals) > 0:
     print('{criticals} | {perfdata}'.format(
         criticals=', '.join(criticals) + ', '.join(warnings),
         perfdata=' '.join(perfdata),
     ))
     print_info(info)
     sys.exit(2)
-elif len(warnings) > 1:
+elif len(warnings) > 0:
     print('{warnings} | {perfdata}'.format(
         warnings=', '.join(warnings),
         perfdata=' '.join(perfdata),
