@@ -9,9 +9,9 @@ URL:            https://github.com/guilbaults/%{name}
 Source0:        https://github.com/guilbaults/%{name}/archive/v%{gittag}/%{name}-%{version}.tar.gz
 
 BuildArch:      noarch
-BuildRequires:  python%{python3_pkgversion}-devel
+BuildRequires:  python36-devel
 Requires:       mft
-Requires:       python3
+Requires:       python36
 
 %description
 This tool is used to monitor unmanaged Infiniband switches made by Mellanox
@@ -25,7 +25,7 @@ This tool is used to monitor unmanaged Infiniband switches made by Mellanox
 %install
 mkdir -p %{buildroot}/usr/lib64/nagios/plugins/
 
-sed -i -e '1i#!/usr/bin/env python3' %{name}.py
+sed -i -e '1i#!/usr/bin/python3.6' %{name}.py
 install -m 0755 %{name}.py %{buildroot}/usr/lib64/nagios/plugins/%{name}
 
 %clean
