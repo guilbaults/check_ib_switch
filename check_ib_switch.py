@@ -180,7 +180,7 @@ info.append('{} PN={} Rev={} SN={}'.format(sw['product_name'],
 
 if args.psu:
     if sw['product_name'] == 'Jaguar UnmngIB200':
-        normal_max_watt = 200 # HDR
+        normal_max_watt = 220 # HDR
     else:
         normal_max_watt = 100 # EDR
     try:
